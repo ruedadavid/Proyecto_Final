@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version. -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Red Monitoreo Ambiental</title> 
+  <script type="text/javascript" src="js/Sandcastle-header.js"></script>
+  <script type="text/javascript" src="../../Build/Cesium/Cesium.js"></script>
+  
+  <style>       
+    @import "../../Build/Cesium/Widgets/widgets.css";
+    @import "../Sandcastle/templates/bucket.css";
+  </style>
+</head>
+<body>
+    <div id="cesiumContainer" class="fullSize"></div>   
+    <div id="toolbar">
+        <h1 id="Tit">Mapa Colombia</h1>
+        <div id="Areas"></div>
+        <div id="Tabla">botón</div>
+    </div>
+   
+  <script>
+     // declaración de variables
+    var url = "http://ec2-54-202-254-90.us-west-2.compute.amazonaws.com:8080/backendAmbiente/webresources/generic/getAllEstaciones";
+    var datos;
+    
+// Definición de la clase Estación
+class Estacion{
+    // Definición del constructor de la clase
+    constructor(id, nombre, lon, lat, h, descripto, sensor){
+        this.id = id;
+        this.nombre = nombre;
+        this.lon = lon;
+        this.lat = lat;
+        this.h = h;
+        this.descripto = descripto;
+        this.sensor = sensor;
+    }
+    // Función para presentar los datos del objeto
+    mostrarDatoBasico(){
+        var ident = [this.id, this.nombre, this.lon, this.lat, this.h, this.descripto];         
+        return(ident);
+    }
+    // Función para dibujar el objeto en un visor de Cesium
+    graficar(col){
+        if (col === undefined){
+            col = Cesium.Color.LIME;
+        }
+        visor.entities.add({
+            position : Cesium.Cartesian3.fromDegrees(this.lon, this.lat, this.h),
+            show: true,
+            description:'<h1>Ver</h1><br><iframe width="1000" height="600" src="'+ this.descripto +' frameborder="0"></iframe>',
+            cylinder : {
+                length : 10000.0,
+                topRadius : 500,
+                bottomRadius : 500.0,
+                material : Cesium.Color.GREEN.withAlpha(0.5),
+                outline : true,
+                outlineColor : col
+            }
+        })
+                    
+    }
+}
+    //
+    leerREST(url, function() {
+        datos = (JSON.parse(this.responseText));
+        var cont;
+        var estaciones = new Array(); 
+        for (cont=0; cont< datos.length;cont++){
+            estaciones.push (datos[cont].latitud);
+        }  
+    });
+    
+    // Se declara la variable "visor", la cual contiene el globo virtual, cade vez que se requiera
+    // cambiar algún elementos del globo virtual es necesario invocar esta variable
+    var visor = new Cesium.Viewer('cesiumContainer',{
+    //   El visor tiene varias opciones para ser modificadas, las siguientes variables
+    // definen la presencia de algunos botones de navegación y otros en todo el visor 
+        // scene3DOnly.       Esta variable activa/descativa la visualización en plano o en el globo.
+        scene3DOnly: false,
+        // baseLayerPicker.   Esta variable permite cambiar el mapa base entre los elementos disponibles
+        baseLayerPicker: false,
+        //timeline.           Esta variable muestra/esconde la línea de tiempo del visor principal.
+        timeline: false,
+        // animation.         Esta variable apaga el botón de la parte inferior izquierda del visor
+        animation: false,
+        //fullscreenButton.   Esta variable muestra/esconde botón de pantalla completa.
+        fullscreenButton: false,
+        //terrainProvider:. Esta variable permite cargar Modelo Digital de Elevación.
+        terrainProvider: Cesium.createWorldTerrain()
+    }); 
+// Carga de Menús y botones de apoyo
+//Este botón requiere la carga de la librería Sandcastle-header.js, en esta librería se definen:
+// 1. addDefaultToolbarButton
+// 2. addToolbarMenu
+// 3. addDefaultToolbarMenu
+// 4. addDefaultToolbarButton
+// 5. addToolbarButton
+Sandcastle.addToggleButton('Luz Día', visor.scene.globe.enableLighting, function(checked) {
+    visor.scene.globe.enableLighting = checked;  
+});
+
+Sandcastle.addDefaultToolbarMenu([{
+    text : 'Estaciones',
+    onselect : function() {
+        verCol(-74.35, 4.52, 15000, 70, -25);
+    }
+},
+{
+    text : 'Alcalá',
+    onselect : function() {
+        verCol(-74.35, 4.52, 15000, 70, -25);
+        // id, nombre, lon, lat, h, descripto, sensor
+        var urla = 'http://monitor-iot.online/sensores/index.html#!/medidas/lecturas/1';
+        var alcala = new Estacion(1, datos[0].nombre, datos[0].longitud, datos[0].latitud, datos[0].altura, urla,4);
+        alcala.graficar();
+    }
+},
+{
+    text : 'Chapinero',
+    onselect : function() {
+        verCol(-74.106524, 4.629361, 70000, 0, -75);
+        var urla = 'http://monitor-iot.online/sensores/index.html#!/medidas/lecturas/2';
+        var chapinero = new Estacion(2, datos[1].nombre, datos[1].longitud, datos[1].latitud, datos[1].altura, urla,4);
+        chapinero.graficar();
+        console.log(chapinero.mostrarDatoBasico());
+    }
+},
+{
+    text : 'Suba',
+    onselect : function() {
+        verCol(-74.106524, 4.629361, 70000, 80, -50);
+        var urla = 'http://monitor-iot.online/sensores/index.html#!/medidas/lecturas/3';
+        var suba = new Estacion(3, datos[2].nombre, datos[2].longitud, datos[2].latitud, datos[2].altura, urla,4);
+        suba.graficar();
+        console.log(suba.mostrarDatoBasico());
+    }
+}
+], 'Areas');
+
+
+//Reset the scene when switching demos.
+Sandcastle.reset = function() {
+    visor.dataSources.removeAll();
+};
+
+function leerREST(url, callback) {
+    // Función definida para leer desde un sitio que sirve datos bajo API-REST
+    //   esta se complementa con otra función que llama los datos
+    // 
+    // url = Ruta desde donde se deben obtener los datos
+    // callback = función que retorna los datos de interés
+    var xhttp = new XMLHttpRequest();        
+    xhttp.addEventListener('load', callback);                
+    xhttp.open("GET", url, true);
+    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xhttp.send();
+}
+
+function verCol(lon, lati, altura, azimut, pendiente) {
+//   Función definida para acelerar el vuelo hasta Colombia, entrega
+// una vista desde las coordenadas ingresadas, posicionandose sobre el punto
+// de ingresado (lon, lati, altura) y mostrandose la vista con azimut 0
+// y pendiente negativa a 75 grados
+// lon = longitud en grados decimales
+// lati = latitud en grados decimales
+// altura = altura en metros
+// azimut = ángulo en grados decimales desde el norte
+// pendiente = ángulo en grados desde el plano de referencia paralelo a 
+//    la superficie terrestre (negativo para mostrar hacia el suelo)
+    if (arguments.length===0){
+        lon = -72;
+        lati = -12;
+        altura = 7500000;
+        azimut = 0.0;
+        pendiente = -75;
+    }
+    else if(arguments.length===1){
+        lati = -12;
+        altura = 7500000;
+        azimut = 0.0;
+        pendiente = -75; 
+    }
+    else if(arguments.length===2){
+        altura = 7500000;
+        azimut = 0.0;
+        pendiente = -75;
+    }
+    else if(arguments.length===3){
+        azimut = 0.0;
+        pendiente = -75;
+    }
+    visor.camera.flyTo({
+    destination : Cesium.Cartesian3.fromDegrees(lon, lati, altura),
+    orientation : {
+        heading : Cesium.Math.toRadians(azimut),
+        pitch : Cesium.Math.toRadians(pendiente),
+        roll : 0.0
+    }
+});
+}
+
+
+
+  </script>
+</body>
+</html>
