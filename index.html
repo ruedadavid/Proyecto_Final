@@ -14,14 +14,25 @@
   <style>       
     @import "../../Build/Cesium/Widgets/widgets.css";
     @import "../Sandcastle/templates/bucket.css";
+    #Tit{
+      box-sizing: content-box;
+      color: rgba(255,255,255,1);
+      text-shadow : 2px 2px 2px #aaa;
+      background: rgb(25,25,25);
+      padding: 3px;
+      border: none;
+      border-radius: 3px;
+      font: normal "Trebuchet MS", Helvetica;
+      font-size: 20px;
+      
+    }
   </style>
 </head>
 <body>
     <div id="cesiumContainer" class="fullSize"></div>   
     <div id="toolbar">
-        <h1 id="Tit">Mapa Colombia</h1>
+        <h1 id="Tit">Red de Monitoreo Ambiental</h1>
         <div id="Areas"></div>
-        <div id="Tabla">botón</div>
     </div>
    
   <script>
@@ -52,19 +63,45 @@ class Estacion{
             col = Cesium.Color.LIME;
         }
         visor.entities.add({
-            position : Cesium.Cartesian3.fromDegrees(this.lon, this.lat, this.h),
+            position : Cesium.Cartesian3.fromDegrees(this.lon, this.lat),
             show: true,
-            description:'<h1>Ver</h1><br><iframe width="1000" height="600" src="'+ this.descripto +' frameborder="0"></iframe>',
+            //<iframe width="560" height="315" src="http://201.245.192.252:81/" frameborder="0" allowfullscreen></iframe>
+            description:'<p>Datos Estación</p><iframe width="560" height="315" src="http://201.245.192.252:81/" frameborder="0" allowfullscreen></iframe>',
             cylinder : {
-                length : 10000.0,
-                topRadius : 500,
-                bottomRadius : 500.0,
+                length : 10.0,
+                topRadius : 1.5,
+                bottomRadius : 1.5,
                 material : Cesium.Color.GREEN.withAlpha(0.5),
                 outline : true,
-                outlineColor : col
+                outlineColor : col,
+                heightReference : Cesium.HeightReference.CLAMP_TO_GROUND
             }
         })
                     
+    }
+    zoomEstacion(){
+        //   Definición de variables para generar un cuadro alrededor
+        // de las coordenadas del punto de interés
+        
+        // Definición de variables
+        // cte = Constante para visualización
+        var cte = 0.00025;
+        var lat1 = this.lat - 7*cte;
+        var lon1 = this.lon + 2*cte;
+        // Coordenadas máximas y mínimas
+        var zminlat = lat1 - cte;
+        var zmaxlat = lat1 + cte;
+        var zminlon = lon1 - cte;
+        var zmaxlon = lon1 + cte;
+        
+        // Navegación hasta el área de referencia
+        visor.camera.flyTo({
+            destination : Cesium.Rectangle.fromDegrees(zminlon, zminlat, zmaxlon, zmaxlat),
+            orientation : {
+                heading : Cesium.Math.toRadians(0.0),
+                  pitch : Cesium.Math.toRadians(-35.0)
+            }
+        });
     }
 }
     //
@@ -91,9 +128,9 @@ class Estacion{
         // animation.         Esta variable apaga el botón de la parte inferior izquierda del visor
         animation: false,
         //fullscreenButton.   Esta variable muestra/esconde botón de pantalla completa.
-        fullscreenButton: false,
+        fullscreenButton: false
         //terrainProvider:. Esta variable permite cargar Modelo Digital de Elevación.
-        terrainProvider: Cesium.createWorldTerrain()
+        //terrainProvider: Cesium.createWorldTerrain()
     }); 
 // Carga de Menús y botones de apoyo
 //Este botón requiere la carga de la librería Sandcastle-header.js, en esta librería se definen:
@@ -113,32 +150,33 @@ Sandcastle.addDefaultToolbarMenu([{
     }
 },
 {
-    text : 'Alcalá',
+    text : 'Estación 1',
     onselect : function() {
-        verCol(-74.35, 4.52, 15000, 70, -25);
         // id, nombre, lon, lat, h, descripto, sensor
-        var urla = 'http://monitor-iot.online/sensores/index.html#!/medidas/lecturas/1';
+        var urla = 'https://www.google.com/';
         var alcala = new Estacion(1, datos[0].nombre, datos[0].longitud, datos[0].latitud, datos[0].altura, urla,4);
         alcala.graficar();
+        alcala.zoomEstacion();
+        console.log(alcala.mostrarDatoBasico());
     }
 },
 {
-    text : 'Chapinero',
+    text : 'Estación 2',
     onselect : function() {
-        verCol(-74.106524, 4.629361, 70000, 0, -75);
         var urla = 'http://monitor-iot.online/sensores/index.html#!/medidas/lecturas/2';
         var chapinero = new Estacion(2, datos[1].nombre, datos[1].longitud, datos[1].latitud, datos[1].altura, urla,4);
         chapinero.graficar();
+        chapinero.zoomEstacion();
         console.log(chapinero.mostrarDatoBasico());
     }
 },
 {
     text : 'Suba',
     onselect : function() {
-        verCol(-74.106524, 4.629361, 70000, 80, -50);
         var urla = 'http://monitor-iot.online/sensores/index.html#!/medidas/lecturas/3';
         var suba = new Estacion(3, datos[2].nombre, datos[2].longitud, datos[2].latitud, datos[2].altura, urla,4);
         suba.graficar();
+        suba.zoomEstacion();
         console.log(suba.mostrarDatoBasico());
     }
 }
